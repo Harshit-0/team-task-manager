@@ -6,7 +6,7 @@ import models
 from auth import SECRET_KEY, ALGORITHM
 from fastapi.security import OAuth2PasswordBearer
 
-# 🔥 This fixes Swagger auth
+# 🔥 Swagger + Bearer token support
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
-
+from fastapi.security import OAuth2PasswordRequestForm
 import models
 from database import engine
 from deps import get_db, get_current_user, require_admin
@@ -41,19 +41,22 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @app.post("/login")
-def login(user: UserLogin, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    #  username = email (important)
+    db_user = db.query(models.User).filter(models.User.email == form_data.username).first()
 
-    if not db_user or not verify_password(user.password, db_user.password):
+    if not db_user or not verify_password(form_data.password, db_user.password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
     token = create_token({"user_id": db_user.id})
 
     return {
         "access_token": token,
-        "token_type": "bearer"   # 🔥 REQUIRED for Swagger
+        "token_type": "bearer"
     }
-
 
 @app.get("/me")
 def get_me(current_user: models.User = Depends(get_current_user)):
