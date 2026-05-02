@@ -2,6 +2,8 @@ from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
 
+print("NEW VERSION DEPLOYED")
+
 SECRET_KEY = "secretkey"
 ALGORITHM = "HS256"
 
