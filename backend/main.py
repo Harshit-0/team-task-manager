@@ -8,6 +8,7 @@ from deps import get_db, get_current_user, require_admin
 from auth import hash_password, verify_password, create_token
 from schemas import UserCreate, UserLogin, ProjectCreate, TaskCreate, TaskUpdate
 
+# Create tables (important for Railway)
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -53,11 +54,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 
 @app.get("/me")
 def get_me(current_user: models.User = Depends(get_current_user)):
-    return {
-        "id": current_user.id,
-        "email": current_user.email,
-        "role": current_user.role
-    }
+    return current_user
 
 
 # ---------------- PROJECT ----------------
@@ -110,8 +107,6 @@ def create_task(
     return new_task
 
 
-# 🔥 Update Task Status
-
 @app.patch("/tasks/{task_id}")
 def update_task(
     task_id: int,
@@ -124,40 +119,22 @@ def update_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    allowed_status = ["todo", "in_progress", "done"]
-    if update.status not in allowed_status:
+    if update.status not in ["todo", "in_progress", "done"]:
         raise HTTPException(status_code=400, detail="Invalid status")
 
     task.status = update.status
     db.commit()
 
-    return {"message": "Task updated", "status": task.status}
+    return task
 
-
-# 🔥 Get My Tasks
 
 @app.get("/tasks/me")
 def get_my_tasks(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    tasks = db.query(models.Task).filter(models.Task.assigned_to == current_user.id).all()
-    return tasks
+    return db.query(models.Task).filter(models.Task.assigned_to == current_user.id).all()
 
-
-# 🔥 Get Project Tasks
-
-@app.get("/projects/{project_id}/tasks")
-def get_project_tasks(
-    project_id: int,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
-):
-    tasks = db.query(models.Task).filter(models.Task.project_id == project_id).all()
-    return tasks
-
-
-# 🔥 Overdue Tasks
 
 @app.get("/tasks/overdue")
 def get_overdue_tasks(
@@ -166,11 +143,9 @@ def get_overdue_tasks(
 ):
     now = datetime.utcnow()
 
-    tasks = db.query(models.Task).filter(
+    return db.query(models.Task).filter(
         models.Task.assigned_to == current_user.id,
         models.Task.due_date != None,
         models.Task.due_date < now,
         models.Task.status != "done"
     ).all()
-
-    return tasks
