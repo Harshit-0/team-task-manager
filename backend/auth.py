@@ -3,7 +3,6 @@ from jose import jwt
 from datetime import datetime, timedelta
 
 SECRET_KEY = "secretkey"
-print("SECRET IN AUTH:", SECRET_KEY)
 ALGORITHM = "HS256"
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

@@ -5,8 +5,6 @@ from jose import jwt, JWTError
 import models
 from auth import SECRET_KEY, ALGORITHM
 
-print("SECRET IN DEPS:", SECRET_KEY)
-
 
 def get_db():
     db = SessionLocal()
@@ -16,32 +14,33 @@ def get_db():
         db.close()
 
 
-# extract token manually from header
-def get_token(Authorization: str = Header(None)):
-    if not Authorization:
+def get_token(authorization: str = Header(None)):
+    if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header missing")
 
-    if not Authorization.startswith("Bearer "):
+    if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid auth header")
 
-    return Authorization.split(" ")[1]
+    return authorization.split(" ")[1]
+
 
 def get_current_user(token: str = Depends(get_token), db: Session = Depends(get_db)):
-    print("TOKEN:", token)
-
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        print("PAYLOAD:", payload)
-
         user_id = payload.get("user_id")
-    except JWTError as e:
-        print("JWT ERROR:", str(e))
+    except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
     user = db.query(models.User).filter(models.User.id == user_id).first()
-    print("USER:", user)
 
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 
     return user
+
+
+def require_admin(current_user: models.User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admins only")
+
+    return current_user

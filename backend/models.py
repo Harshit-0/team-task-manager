@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from database import Base
+from datetime import datetime
+
 
 class User(Base):
     __tablename__ = "users"
@@ -26,3 +28,4 @@ class Task(Base):
     status = Column(String, default="todo")
     assigned_to = Column(Integer, ForeignKey("users.id"))
     project_id = Column(Integer, ForeignKey("projects.id"))
+    due_date = Column(DateTime, nullable=True)
